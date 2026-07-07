@@ -1,0 +1,30 @@
+# ─── KAIO-API Environment Variables ───────────────────────────
+# Copia este archivo como .env para desarrollo local
+# En Railway/Render, configura estas variables en el panel de Variables
+
+# ── Google OAuth ──────────────────────────────────────────────
+# Obtén estos en console.cloud.google.com
+# Proyecto → APIs y servicios → Credenciales → ID de cliente OAuth (tipo Web)
+GOOGLE_CLIENT_ID=your_client_id_here.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_client_secret_here
+
+# ── Google Ads ────────────────────────────────────────────────
+# Obtén el Developer Token en:
+# ads.google.com → Herramientas → Centro de API
+# Nivel básico es suficiente para empezar (aprobación en 1-2 días)
+GOOGLE_DEVELOPER_TOKEN=your_developer_token_here
+
+# ── URLs ──────────────────────────────────────────────────────
+# REDIRECT_URI: debe coincidir EXACTAMENTE con lo que pusiste en Google Cloud Console
+# Formato: https://TU-SUBDOMINIO.railway.app/auth/google/callback
+REDIRECT_URI=https://kaio-api.railway.app/auth/google/callback
+
+# URL de tu frontend en Netlify
+FRONTEND_URL=https://dashkaio.netlify.app
+
+# ── Seguridad ─────────────────────────────────────────────────
+# Genera uno aleatorio: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+SESSION_SECRET=replace_with_random_64_char_string
+
+# Puerto (Railway lo asigna automáticamente, no tocar)
+PORT=3000
