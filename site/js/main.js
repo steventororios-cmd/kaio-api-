@@ -400,23 +400,46 @@ function buildTransferTable() {
 }
 
 // ---------- Gallery ----------
+// Silhouette decorations per category — hand-drawn accents that stand in for
+// real photography until each tour's `photo` field points at a real image.
+const CATEGORY_SILHOUETTE = {
+  naturaleza: '<path d="M0 150 L40 100 L70 130 L110 70 L150 120 L180 95 L200 150 Z" fill="#fff" opacity=".16"/>',
+  cultura: '<path d="M60 150 V90 L100 55 L140 90 V150 Z M92 150 V115 H108 V150 Z" fill="#fff" opacity=".16"/>',
+  aventura: '<path d="M0 130c25-18 45-18 70 0s45 18 70 0 45-18 70 0v20H0Z" fill="#fff" opacity=".18"/>',
+  rumba: '<circle cx="100" cy="85" r="34" fill="none" stroke="#fff" stroke-width="3" opacity=".18"/><circle cx="100" cy="85" r="52" fill="none" stroke="#fff" stroke-width="2" opacity=".1"/>',
+  miradores: '<path d="M0 150 L50 90 L90 130 L120 100 L160 150 Z" fill="#fff" opacity=".16"/><circle cx="150" cy="45" r="14" fill="#fff" opacity=".14"/>',
+  traslados: '<path d="M10 120h180M40 120v-30h120v30" fill="none" stroke="#fff" stroke-width="3" opacity=".16"/>',
+};
+
+// Curated spread of tours shown in the gallery — kept to a manageable count
+// while covering every category. Swap `photo` on the matching tour in
+// data.js (see the comment above TOURS) once a real image is available; this
+// function picks it up automatically.
+const GALLERY_TOUR_IDS = ['guatape', 'napoles', 'comuna13', 'cafe', 'rioclaro', 'santafe', 'jardin', 'picacho', 'parapente', 'provenza', 'chiva', 'pueblos'];
+const GALLERY_LARGE_IDS = ['guatape', 'napoles'];
+
 function buildGallery() {
-  const items = [
-    { name: 'Represa de Guatapé', icon: 'boat', c: ['#1c4a5e', '#15394a'] },
-    { name: 'Comuna 13', icon: 'palette', c: ['#a11f2b', '#c22a35'] },
-    { name: 'Santa Fe de Antioquia', icon: 'church', c: ['#e7b74f', '#f0cd7e'] },
-    { name: 'Hacienda Nápoles', icon: 'leaf', c: ['#5a9a2f', '#7cb342'] },
-    { name: 'Río Claro', icon: 'water', c: ['#15394a', '#1c4a5e'] },
-    { name: 'Finca cafetera', icon: 'coffee', c: ['#a11f2b', '#7a1620'] },
-    { name: 'Miradores nocturnos', icon: 'mountain', c: ['#0f2a35', '#15394a'] },
-    { name: 'Parapente sobre Antioquia', icon: 'wind', c: ['#c22a35', '#db3b43'] },
-  ];
   const grid = document.getElementById('galleryGrid');
-  grid.innerHTML = items.map((it, i) => `
-    <div class="g-item reveal" style="transition-delay:${i * 60}ms;background:linear-gradient(135deg, ${it.c[0]}, ${it.c[1]});">
-      <svg class="ic"><use href="#ic-${it.icon}"/></svg>
-      <span>${it.name}</span>
-    </div>`).join('');
+  const items = GALLERY_TOUR_IDS.map((id) => TOURS.find((t) => t.id === id)).filter(Boolean);
+
+  grid.innerHTML = items.map((t, i) => {
+    const cat = ICONS_BY_CATEGORY[t.category] || { c1: '#15394a', c2: '#1c4a5e' };
+    const large = GALLERY_LARGE_IDS.includes(t.id) ? ' large' : '';
+    const bg = t.photo
+      ? `background-image:url('${t.photo}');background-size:cover;background-position:center;`
+      : `background:linear-gradient(135deg, ${cat.c1}, ${cat.c2});`;
+    const silhouette = t.photo ? '' : `<svg class="g-silhouette" viewBox="0 0 200 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${CATEGORY_SILHOUETTE[t.category] || ''}</svg>`;
+    return `
+    <button type="button" class="g-item reveal${large}" data-id="${t.id}" style="transition-delay:${i * 60}ms;${bg}" aria-label="Ver detalle de ${t.name}">
+      ${silhouette}
+      ${t.photo ? '' : `<svg class="ic"><use href="#ic-${tourIcon(t)}"/></svg>`}
+      <span class="g-caption"><strong>${t.name}</strong><small>${t.tag}</small></span>
+    </button>`;
+  }).join('');
+
+  grid.querySelectorAll('.g-item').forEach((btn) => {
+    btn.addEventListener('click', () => openTourModal(btn.dataset.id));
+  });
   observeReveals(grid);
 }
 

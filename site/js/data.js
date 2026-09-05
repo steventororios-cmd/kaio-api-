@@ -17,9 +17,14 @@ const CATEGORIES = {
   traslados: { label: 'Traslados', icon: 'bus' },
 };
 
+// Optional per-tour photo: set to a path like 'assets/img/gallery/guatape.jpg'
+// once a real photo is added under site/assets/img/gallery/. Leave null to
+// keep the illustrated gradient + icon fallback (used across tour cards,
+// the gallery section and the detail modal).
 const TOURS = [
   {
     id: 'guatape',
+    photo: null,
     name: 'Guatapé',
     tag: 'El clásico antioqueño',
     category: 'naturaleza',
@@ -98,6 +103,7 @@ const TOURS = [
   },
   {
     id: 'napoles',
+    photo: null,
     name: 'Hacienda Nápoles',
     tag: 'Aventura y fauna salvaje',
     category: 'aventura',
@@ -120,6 +126,7 @@ const TOURS = [
   },
   {
     id: 'rioclaro',
+    photo: null,
     name: 'Río Claro',
     tag: 'Rafting y espeleología',
     category: 'aventura',
@@ -135,6 +142,7 @@ const TOURS = [
   },
   {
     id: 'cafe',
+    photo: null,
     name: 'Tour del Café',
     tag: 'Tradición cafetera antioqueña',
     category: 'cultura',
@@ -258,6 +266,7 @@ const TOURS = [
   },
   {
     id: 'parapente',
+    photo: null,
     name: 'Parapente',
     tag: 'Vuela sobre Antioquia',
     category: 'aventura',
