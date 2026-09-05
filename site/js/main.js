@@ -329,16 +329,9 @@ function buildCalendar() {
   renderCalList(0);
 }
 
-function renderCalList(dayIndex) {
-  const list = document.getElementById('calList');
-  const dayTours = TOURS.filter((t) => t.days.includes(dayIndex));
-  if (!dayTours.length) {
-    list.innerHTML = `<div class="cal-empty">No hay tours programados este día. ¡Escríbenos y armamos un plan a la medida!</div>`;
-    return;
-  }
-  list.innerHTML = dayTours.map((t) => {
-    const cat = ICONS_BY_CATEGORY[t.category] || { c1: '#15394a', c2: '#1c4a5e', icon: 'map-pin' };
-    return `
+function calItemHTML(t) {
+  const cat = ICONS_BY_CATEGORY[t.category] || { c1: '#15394a', c2: '#1c4a5e', icon: 'map-pin' };
+  return `
     <div class="cal-item">
       <div class="cal-ic" style="background:linear-gradient(135deg, ${cat.c1}, ${cat.c2});">
         <svg class="ic"><use href="#ic-${tourIcon(t)}"/></svg>
@@ -349,7 +342,50 @@ function renderCalList(dayIndex) {
       </div>
       <div class="price">${money(t.price)}</div>
     </div>`;
-  }).join('');
+}
+
+function renderCalList(dayIndex) {
+  const list = document.getElementById('calList');
+  const dayTours = TOURS.filter((t) => t.days.includes(dayIndex));
+  if (!dayTours.length) {
+    list.innerHTML = `<div class="cal-empty">No hay tours programados este día. ¡Escríbenos y armamos un plan a la medida!</div>`;
+    return;
+  }
+
+  // Separate the tours unique to this day from the ones that run every day of
+  // the week, so picking a different day actually shows what changes instead
+  // of repeating the same 10-item daily list every time.
+  const special = dayTours.filter((t) => t.days.length < 7);
+  const daily = dayTours.filter((t) => t.days.length === 7);
+
+  let html = '';
+  if (special.length) {
+    html += `<div class="cal-group-label"><svg class="ic"><use href="#ic-star"/></svg>Salidas especiales de ${DAY_NAMES[dayIndex]}</div>`;
+    html += special.map(calItemHTML).join('');
+  }
+  if (daily.length) {
+    html += `
+      <button class="cal-toggle" id="calDailyToggle" aria-expanded="false">
+        <svg class="ic"><use href="#ic-calendar"/></svg>
+        <span id="calDailyToggleLabel">Ver ${daily.length} tours con salida diaria</span>
+        <svg class="ic chev"><use href="#ic-arrow-right"/></svg>
+      </button>
+      <div class="cal-daily-list" id="calDailyList" hidden>${daily.map(calItemHTML).join('')}</div>`;
+  }
+  list.innerHTML = html;
+
+  const toggle = document.getElementById('calDailyToggle');
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      const dailyList = document.getElementById('calDailyList');
+      const label = document.getElementById('calDailyToggleLabel');
+      const isOpen = !dailyList.hidden;
+      dailyList.hidden = isOpen;
+      toggle.classList.toggle('open', !isOpen);
+      toggle.setAttribute('aria-expanded', String(!isOpen));
+      label.textContent = isOpen ? `Ver ${daily.length} tours con salida diaria` : 'Ocultar tours con salida diaria';
+    });
+  }
 }
 
 // ---------- Transfer table ----------
