@@ -217,11 +217,14 @@ function tourCardHTML(t) {
   const cat = ICONS_BY_CATEGORY[t.category] || { c1: '#15394a', c2: '#1c4a5e' };
   const days = t.days;
   const dayBadges = DAY_SHORT.map((d, i) => `<span class="d ${days.includes(i) ? 'on' : ''}">${d}</span>`).join('');
+  const mediaBg = t.photo
+    ? `background-image:linear-gradient(180deg, rgba(15,42,53,0) 55%, rgba(15,42,53,.55)), url('${t.photo}');background-size:cover;background-position:center;`
+    : `background:linear-gradient(135deg, ${cat.c1}, ${cat.c2});`;
   return `
   <div class="tour-card reveal" data-category="${t.category}" data-id="${t.id}">
-    <div class="tour-media" style="background:linear-gradient(135deg, ${cat.c1}, ${cat.c2});">
+    <div class="tour-media" style="${mediaBg}">
       ${t.badge ? `<span class="tour-badge">${t.badge}</span>` : ''}
-      <svg class="ic tour-icon-big"><use href="#ic-${tourIcon(t)}"/></svg>
+      ${t.photo ? '' : `<svg class="ic tour-icon-big"><use href="#ic-${tourIcon(t)}"/></svg>`}
       <div class="tour-price-tag"><small>desde</small>${money(t.price)}</div>
     </div>
     <div class="tour-body">
@@ -285,6 +288,9 @@ function initModal() {
 function openTourModal(id) {
   const t = TOURS.find((x) => x.id === id);
   if (!t) return;
+  const coverImg = document.getElementById('modalCoverImg');
+  if (t.photo) { coverImg.src = t.photo; coverImg.alt = t.name; coverImg.style.display = 'block'; }
+  else { coverImg.style.display = 'none'; coverImg.removeAttribute('src'); }
   document.getElementById('modalTag').textContent = t.tag;
   document.getElementById('modalTitle').textContent = t.name;
   document.getElementById('modalPrice').innerHTML = `${money(t.price)}<span>${t.priceUnit}</span>`;

@@ -24,7 +24,7 @@ const CATEGORIES = {
 const TOURS = [
   {
     id: 'guatape',
-    photo: null,
+    photo: 'assets/img/gallery/guatape.jpg',
     name: 'Guatapé',
     tag: 'El clásico antioqueño',
     category: 'naturaleza',
@@ -103,7 +103,7 @@ const TOURS = [
   },
   {
     id: 'napoles',
-    photo: null,
+    photo: 'assets/img/gallery/hacienda-napoles.jpg',
     name: 'Hacienda Nápoles',
     tag: 'Aventura y fauna salvaje',
     category: 'aventura',
@@ -126,7 +126,7 @@ const TOURS = [
   },
   {
     id: 'rioclaro',
-    photo: null,
+    photo: 'assets/img/gallery/rio-claro.jpg',
     name: 'Río Claro',
     tag: 'Rafting y espeleología',
     category: 'aventura',
@@ -142,7 +142,7 @@ const TOURS = [
   },
   {
     id: 'cafe',
-    photo: null,
+    photo: 'assets/img/gallery/finca-cafetera.jpg',
     name: 'Tour del Café',
     tag: 'Tradición cafetera antioqueña',
     category: 'cultura',
@@ -236,6 +236,7 @@ const TOURS = [
   },
   {
     id: 'picacho',
+    photo: 'assets/img/gallery/miradores-nocturnos.jpg',
     name: 'Miradores Picacho y San Félix',
     tag: 'Medellín iluminado desde las alturas',
     category: 'miradores',
@@ -266,7 +267,7 @@ const TOURS = [
   },
   {
     id: 'parapente',
-    photo: null,
+    photo: 'assets/img/gallery/parapente.jpg',
     name: 'Parapente',
     tag: 'Vuela sobre Antioquia',
     category: 'aventura',
