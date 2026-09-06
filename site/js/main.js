@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeader();
   initMobileNav();
   initHeroCanvas();
+  initHeroSlideshow();
   buildMarquee();
   syncTourCounts();
   initCounters();
@@ -173,6 +174,20 @@ function initHeroCanvas() {
   makeParticles();
   tick();
   window.addEventListener('resize', () => { resize(); makeParticles(); });
+}
+
+// ---------- Hero photo slideshow ----------
+function initHeroSlideshow() {
+  const slides = document.querySelectorAll('#heroSlideshow .hero-slide');
+  if (slides.length < 2) return;
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReduced) return;
+  let current = 0;
+  setInterval(() => {
+    slides[current].classList.remove('active');
+    current = (current + 1) % slides.length;
+    slides[current].classList.add('active');
+  }, 6000);
 }
 
 // ---------- Marquee ----------
