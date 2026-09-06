@@ -417,7 +417,7 @@ const CATEGORY_SILHOUETTE = {
 // while covering every category. Swap `photo` on the matching tour in
 // data.js (see the comment above TOURS) once a real image is available; this
 // function picks it up automatically.
-const GALLERY_TOUR_IDS = ['guatape', 'napoles', 'comuna13', 'cafe', 'rioclaro', 'santafe', 'jardin', 'picacho', 'parapente', 'provenza', 'chiva', 'pueblos'];
+const GALLERY_TOUR_IDS = ['guatape', 'napoles', 'comuna13', 'santafe', 'cafe', 'rioclaro', 'escobar', 'chiva', 'jardin', 'oriente', 'picacho', 'octava', 'parapente', 'provenza'];
 const GALLERY_LARGE_IDS = ['guatape', 'napoles'];
 
 function buildGallery() {

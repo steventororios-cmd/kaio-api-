@@ -57,6 +57,7 @@ const TOURS = [
   },
   {
     id: 'comuna13',
+    photo: 'assets/img/gallery/comuna-13.jpg',
     name: 'City Tour + Comuna 13',
     tag: 'Historia viva de Medellín',
     category: 'cultura',
@@ -80,6 +81,7 @@ const TOURS = [
   },
   {
     id: 'santafe',
+    photo: 'assets/img/gallery/santa-fe-antioquia.webp',
     name: 'Santa Fe de Antioquia',
     tag: 'Pueblo colonial patrimonio',
     category: 'cultura',
@@ -158,6 +160,7 @@ const TOURS = [
   },
   {
     id: 'escobar',
+    photo: 'assets/img/gallery/pablo-escobar.jpg',
     name: 'Tour Pablo Escobar',
     tag: 'Memoria histórica de Medellín',
     category: 'cultura',
@@ -173,6 +176,7 @@ const TOURS = [
   },
   {
     id: 'chiva',
+    photo: 'assets/img/gallery/chiva-rumbera.jpg',
     name: 'Chiva Nocturna',
     tag: 'Rumba y sabor paisa',
     category: 'rumba',
@@ -188,6 +192,7 @@ const TOURS = [
   },
   {
     id: 'jardin',
+    photo: 'assets/img/gallery/jardin-antioquia.jpeg',
     name: 'Jardín, Antioquia',
     tag: 'Pueblo patrimonio y café',
     category: 'naturaleza',
@@ -203,6 +208,7 @@ const TOURS = [
   },
   {
     id: 'oriente',
+    photo: 'assets/img/gallery/vuelta-oriente.jpeg',
     name: 'Vuelta al Oriente',
     tag: 'Encanto del Oriente antioqueño',
     category: 'naturaleza',
@@ -251,6 +257,7 @@ const TOURS = [
   },
   {
     id: 'octava',
+    photo: 'assets/img/gallery/octava-maravilla.jpg',
     name: 'Mirador Octava Maravilla',
     tag: 'Show en vivo y folclor paisa',
     category: 'miradores',
@@ -283,6 +290,7 @@ const TOURS = [
   },
   {
     id: 'provenza',
+    photo: 'assets/img/gallery/provenza.png',
     name: 'Tour Provenza · 3 discos, 1 noche',
     tag: 'La mejor rumba de El Poblado',
     category: 'rumba',
