@@ -225,6 +225,7 @@ const TOURS = [
   },
   {
     id: 'lechera',
+    photo: 'assets/img/gallery/ruta-lechera.jpg',
     name: 'Ruta Lechera',
     tag: 'Vida de campo antioqueña',
     category: 'naturaleza',
@@ -307,6 +308,7 @@ const TOURS = [
   },
   {
     id: 'pueblos',
+    photo: 'assets/img/gallery/pueblos-postres-miradores.jpg',
     name: 'Tour Pueblos, Postres & Miradores',
     tag: 'Lo mejor del Oriente en un día',
     category: 'cultura',
