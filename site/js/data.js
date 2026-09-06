@@ -14,7 +14,6 @@ const CATEGORIES = {
   aventura: { label: 'Aventura', icon: 'water' },
   rumba: { label: 'Rumba', icon: 'music' },
   miradores: { label: 'Miradores', icon: 'mountain' },
-  traslados: { label: 'Traslados', icon: 'bus' },
 };
 
 // Optional per-tour photo: set to a path like 'assets/img/gallery/guatape.jpg'
@@ -317,16 +316,6 @@ const TOURS = [
   },
 ];
 
-const AIRPORT_RATES = [
-  { pax: '1 – 4', dia: 150000, noche: 170000 },
-  { pax: '5 – 8', dia: 260000, noche: 290000 },
-  { pax: '9 – 14', dia: 310000, noche: 340000 },
-  { pax: '15 – 18', dia: 370000, noche: 400000 },
-  { pax: '19 – 24', dia: 420000, noche: 450000 },
-  { pax: '25 – 39', dia: 540000, noche: 570000 },
-  { pax: '+40', dia: null, noche: null, asesor: true },
-];
-
 const TESTIMONIALS = [
   { name: 'Camila Restrepo', origin: 'Bogotá, Colombia', text: 'El tour a Guatapé fue espectacular. El guía sabía todo sobre la región y el barco rumbero fue el mejor cierre del día. 100% recomendado.', rating: 5 },
   { name: 'Daniel Ortiz', origin: 'Ciudad de México', text: 'Hicimos la Comuna 13 y el Tour del Café en el mismo viaje. Organización impecable, transporte puntual y guías que realmente conocen la historia.', rating: 5 },
@@ -339,6 +328,6 @@ const FAQS = [
   { q: '¿Cómo reservo un tour?', a: 'Puedes reservar directamente por WhatsApp haciendo clic en el botón verde flotante o en "Reservar" dentro de cada tour. Te confirmamos disponibilidad, cupos y forma de pago en minutos.' },
   { q: '¿Los tours incluyen recogida en el hotel?', a: 'Los tours nocturnos y experiencias premium incluyen recogida en tu hospedaje. Los tours de día completo tienen puntos de encuentro fijos (Parque del Poblado o Estación Estadio) indicados en cada tour.' },
   { q: '¿Qué pasa si llueve o el tour se cancela?', a: 'Todos nuestros tours incluyen tarjeta de asistencia médica y seguro de viaje. Si un tour se cancela por condiciones climáticas o de fuerza mayor, te ofrecemos reprogramación sin costo adicional.' },
-  { q: '¿Manejan grupos y planes corporativos?', a: 'Sí. Diseñamos experiencias a la medida para grupos, empresas y eventos especiales, incluyendo traslados para más de 40 personas con asesoría personalizada.' },
+  { q: '¿Manejan grupos y planes corporativos?', a: 'Sí. Diseñamos experiencias a la medida para grupos grandes, empresas y eventos especiales, con asesoría personalizada según el número de personas.' },
   { q: '¿Los niños pagan tarifa completa?', a: 'Depende del tour: varios tienen tarifas especiales para niños (ver el detalle de cada experiencia). Escríbenos por WhatsApp para confirmar la tarifa exacta según edades.' },
 ];

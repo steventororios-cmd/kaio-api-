@@ -21,7 +21,6 @@ const ICONS_BY_CATEGORY = {
   aventura: { icon: 'water', c1: '#1c4a5e', c2: '#15394a' },
   rumba: { icon: 'music', c1: '#c22a35', c2: '#db3b43' },
   miradores: { icon: 'mountain', c1: '#15394a', c2: '#0f2a35' },
-  traslados: { icon: 'bus', c1: '#e7b74f', c2: '#f0cd7e' },
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -31,12 +30,12 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileNav();
   initHeroCanvas();
   buildMarquee();
+  syncTourCounts();
   initCounters();
   initReveal();
   buildFilterTabs();
   buildToursGrid('todos');
   buildCalendar();
-  buildTransferTable();
   buildGallery();
   buildTestimonials();
   buildFaq();
@@ -82,7 +81,7 @@ function observeReveals(root) {
 
 // ---------- WhatsApp wiring ----------
 function wireWhatsappLinks() {
-  const ids = ['headerWhatsapp', 'navWhatsapp', 'heroWhatsapp', 'ctaWhatsapp', 'transferWhatsapp', 'floatWhatsapp', 'socialWhatsapp'];
+  const ids = ['headerWhatsapp', 'navWhatsapp', 'heroWhatsapp', 'ctaWhatsapp', 'floatWhatsapp', 'socialWhatsapp'];
   ids.forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.href = waLink(CONFIG.whatsappDefaultMsg);
@@ -182,6 +181,15 @@ function buildMarquee() {
   const track = document.getElementById('marqueeTrack');
   const full = [...names, ...names]; // duplicate for seamless loop
   track.innerHTML = full.map((n) => `<span>${n}</span>`).join('');
+}
+
+// Keep tour-count copy (hero stat + tours section blurb) in sync with the
+// actual catalog, so removing/adding a tour never leaves a stale number.
+function syncTourCounts() {
+  const heroStat = document.getElementById('statTourCount');
+  if (heroStat) heroStat.dataset.count = String(TOURS.length);
+  const blurb = document.getElementById('toursCountText');
+  if (blurb) blurb.textContent = String(TOURS.length);
 }
 
 // ---------- Counters ----------
@@ -394,17 +402,6 @@ function renderCalList(dayIndex) {
   }
 }
 
-// ---------- Transfer table ----------
-function buildTransferTable() {
-  const body = document.getElementById('transferBody');
-  body.innerHTML = AIRPORT_RATES.map((r) => `
-    <tr>
-      <td class="pax">${r.pax} pax</td>
-      <td class="price">${r.asesor ? 'Consultar con asesor' : money(r.dia)}</td>
-      <td class="price">${r.asesor ? 'Consultar con asesor' : money(r.noche)}</td>
-    </tr>`).join('');
-}
-
 // ---------- Gallery ----------
 // Silhouette decorations per category — hand-drawn accents that stand in for
 // real photography until each tour's `photo` field points at a real image.
@@ -414,7 +411,6 @@ const CATEGORY_SILHOUETTE = {
   aventura: '<path d="M0 130c25-18 45-18 70 0s45 18 70 0 45-18 70 0v20H0Z" fill="#fff" opacity=".18"/>',
   rumba: '<circle cx="100" cy="85" r="34" fill="none" stroke="#fff" stroke-width="3" opacity=".18"/><circle cx="100" cy="85" r="52" fill="none" stroke="#fff" stroke-width="2" opacity=".1"/>',
   miradores: '<path d="M0 150 L50 90 L90 130 L120 100 L160 150 Z" fill="#fff" opacity=".16"/><circle cx="150" cy="45" r="14" fill="#fff" opacity=".14"/>',
-  traslados: '<path d="M10 120h180M40 120v-30h120v30" fill="none" stroke="#fff" stroke-width="3" opacity=".16"/>',
 };
 
 // Curated spread of tours shown in the gallery — kept to a manageable count
@@ -502,7 +498,6 @@ function populateTourSelect() {
   const select = document.getElementById('fTour');
   select.innerHTML = '<option value="">Selecciona un tour (opcional)</option>' +
     TOURS.map((t) => `<option value="${t.name}">${t.name}</option>`).join('') +
-    '<option value="Traslado Aeropuerto">Traslado Aeropuerto</option>' +
     '<option value="No estoy seguro / Asesoría">No estoy seguro / Quiero asesoría</option>';
 }
 
