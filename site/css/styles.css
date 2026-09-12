@@ -274,6 +274,8 @@ header.scrolled .hamburger { background: rgba(22,35,44,0.08); }
 .marquee-track { display: flex; width: max-content; animation: marquee 34s linear infinite; gap: 46px; }
 .marquee-track span { color: rgba(255,255,255,0.85); font-weight: 600; font-size: 0.92rem; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
 .marquee-track span::before { content: '✦'; color: var(--gold-500); }
+.marquee-track span.bestseller { color: var(--gold-400); }
+.marquee-track span.bestseller::after { content: '★ Bestseller'; font-size: 0.68rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: var(--teal-900); background: var(--gold-500); padding: 2px 9px; border-radius: 999px; }
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 /* ============================================================
@@ -295,6 +297,43 @@ header.scrolled .hamburger { background: rgba(22,35,44,0.08); }
 .feature-icon.c4 { background: linear-gradient(135deg, var(--teal-800), var(--teal-700)); }
 .feature-card h3 { font-size: 1.08rem; color: var(--teal-900); margin-bottom: 8px; }
 .feature-card p { color: var(--ink-500); font-size: 0.92rem; line-height: 1.6; }
+
+/* ============================================================
+   Featured tour (bestseller spotlight)
+   ============================================================ */
+.featured-tour {
+  position: relative; display: grid; grid-template-columns: 1.05fr 1fr;
+  background: #fff; border-radius: var(--radius-lg); overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(231,183,79,.5), 0 30px 70px -20px rgba(231,183,79,.4), var(--shadow-lg);
+}
+.featured-media { position: relative; min-height: 420px; }
+.featured-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.featured-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(15,42,53,.35), transparent 45%); }
+.featured-ribbon {
+  position: absolute; top: 26px; left: -8px; z-index: 2; display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, var(--gold-500), #f4a533); color: var(--teal-900); font-weight: 800;
+  font-size: 0.82rem; letter-spacing: .03em; text-transform: uppercase; padding: 11px 22px 11px 26px;
+  border-radius: 0 999px 999px 0; box-shadow: var(--shadow-md); animation: featuredRibbonPulse 2.6s ease-in-out infinite;
+}
+.featured-ribbon .ic { width: 16px; height: 16px; fill: currentColor; }
+@keyframes featuredRibbonPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+.featured-content { padding: 48px 46px; display: flex; flex-direction: column; justify-content: center; gap: 16px; background: linear-gradient(160deg, #fff, var(--sand-100)); }
+.featured-content .eyebrow { background: rgba(231,183,79,.2); color: #8a5a12; }
+.featured-content h2 { font-size: clamp(1.7rem, 3vw, 2.5rem); color: var(--teal-900); line-height: 1.2; }
+.featured-content h2 .script { font-size: 1.3em; }
+.featured-tag { color: var(--ink-500); font-size: 0.96rem; }
+.featured-highlights { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin: 4px 0; }
+.featured-highlights li { display: flex; gap: 8px; align-items: flex-start; font-size: 0.92rem; color: var(--ink-700); line-height: 1.4; }
+.featured-highlights li .ic { width: 16px; height: 16px; color: var(--green-600); margin-top: 3px; flex-shrink: 0; }
+.featured-price { font-size: 2.1rem; font-weight: 800; color: var(--red-600); }
+.featured-price span { font-size: 0.82rem; font-weight: 600; color: var(--ink-500); margin-left: 4px; }
+.featured-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+@media (max-width: 860px) {
+  .featured-tour { grid-template-columns: 1fr; }
+  .featured-media { min-height: 260px; }
+  .featured-content { padding: 34px 26px; }
+  .featured-highlights { grid-template-columns: 1fr; }
+}
 
 /* ============================================================
    Tours

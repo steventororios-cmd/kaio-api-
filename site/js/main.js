@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
   syncTourCounts();
   initCounters();
   initReveal();
+  buildFeaturedTour();
   buildFilterTabs();
   buildToursGrid('todos');
   buildCalendar();
@@ -192,10 +193,10 @@ function initHeroSlideshow() {
 
 // ---------- Marquee ----------
 function buildMarquee() {
-  const names = TOURS.map((t) => t.name);
+  const items = TOURS.map((t) => ({ name: t.name, bestseller: t.id === FEATURED_TOUR_ID }));
   const track = document.getElementById('marqueeTrack');
-  const full = [...names, ...names]; // duplicate for seamless loop
-  track.innerHTML = full.map((n) => `<span>${n}</span>`).join('');
+  const full = [...items, ...items]; // duplicate for seamless loop
+  track.innerHTML = full.map((i) => `<span${i.bestseller ? ' class="bestseller"' : ''}>${i.name}</span>`).join('');
 }
 
 // Keep tour-count copy (hero stat + tours section blurb) in sync with the
@@ -279,6 +280,39 @@ function buildFilterTabs() {
       buildToursGrid(btn.dataset.filter);
     });
   });
+}
+
+// ---------- Featured tour (bestseller spotlight) ----------
+const FEATURED_TOUR_ID = 'guatape';
+function buildFeaturedTour() {
+  const t = TOURS.find((x) => x.id === FEATURED_TOUR_ID);
+  const container = document.getElementById('featuredTour');
+  if (!t || !container) return;
+
+  const topHighlights = t.highlights.slice(0, 4);
+  container.innerHTML = `
+    <div class="featured-tour reveal">
+      <div class="featured-media">
+        ${t.photo ? `<img src="${t.photo}" alt="${t.name} — ${t.tag}" loading="lazy">` : ''}
+        <span class="featured-ribbon"><svg class="ic"><use href="#ic-star"/></svg>Tour más vendido</span>
+      </div>
+      <div class="featured-content">
+        <div class="eyebrow"><svg class="ic"><use href="#ic-award"/></svg>Nuestro destino insignia</div>
+        <h2>El favorito de nuestros viajeros: <span class="script" style="color:var(--red-600)">${t.name}</span></h2>
+        <p class="featured-tag">${t.tag} · ${t.schedule}</p>
+        <ul class="featured-highlights">
+          ${topHighlights.map((h) => `<li><svg class="ic"><use href="#ic-check"/></svg>${h}</li>`).join('')}
+        </ul>
+        <div class="featured-price">${money(t.price)}<span>${t.priceUnit}</span></div>
+        <div class="featured-actions">
+          <a href="${waLink('Hola Aventuras Tour Medellín 👋, quiero reservar el tour: ' + t.name)}" target="_blank" rel="noopener" class="btn btn-primary"><svg class="ic"><use href="#ic-whatsapp"/></svg>Reservar Guatapé ahora</a>
+          <button type="button" class="btn btn-ghost featured-detail-btn"><svg class="ic"><use href="#ic-arrow-right"/></svg>Ver todos los detalles</button>
+        </div>
+      </div>
+    </div>`;
+
+  container.querySelector('.featured-detail-btn').addEventListener('click', () => openTourModal(t.id));
+  observeReveals(container);
 }
 
 function buildToursGrid(filter) {
