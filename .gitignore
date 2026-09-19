@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Env files
+.env
+.env.local
+.env.*.local
+!*.env.example
+!kaio-api-env.example
+
+# Next.js
+crm/.next/
+crm/out/
+crm/build/
+crm/*.tsbuildinfo
+
+# Supabase CLI local state
+crm/supabase/.branches/
+crm/supabase/.temp/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/

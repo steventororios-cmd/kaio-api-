@@ -1,0 +1,33 @@
+{
+  "name": "aventuras-crm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CRM interno de Aventuras Tour Medellín — inbox multicanal (WhatsApp/Instagram/Messenger) + agente de IA de ventas",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "seed:tours": "tsx supabase/seed/import-tours-from-site.ts",
+    "simulate:webhook": "tsx supabase/seed/simulate-webhook.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "next": "16.3.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "dotenv": "^16.4.5",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.2"
+  },
+  "engines": { "node": ">=18.18" }
+}
