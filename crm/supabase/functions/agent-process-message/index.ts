@@ -109,6 +109,27 @@ Deno.serve(async (req: Request) => {
       return json({ skipped: true, reason: 'media could not be processed into text context' });
     }
 
+    // ── Debounce (Fase 5) ────────────────────────────────────────────
+    // Si el lead manda varios mensajes seguidos ("Hola" / "quiero info" /
+    // "del tour a Guatapé"), cada uno dispara su propia invocación. Solo
+    // el mensaje que sigue siendo el más reciente al cabo de una breve
+    // espera genera una respuesta — los anteriores ceden el turno (su
+    // contenido ya queda incluido en el historial que usará el último),
+    // evitando 3 respuestas separadas y descoordinadas.
+    await new Promise((resolve) => setTimeout(resolve, 4000));
+    const { data: latestInbound } = await db
+      .from('messages')
+      .select('id')
+      .eq('conversation_id', conversation.id)
+      .eq('direction', 'inbound')
+      .eq('sender_type', 'contact')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latestInbound && latestInbound.id !== message.id) {
+      return json({ skipped: true, reason: 'debounced: a newer message arrived, deferring to it' });
+    }
+
     const { data: tours } = await db
       .from('tours')
       .select(
@@ -205,7 +226,8 @@ Deno.serve(async (req: Request) => {
       if (!channelRow) {
         sendError = 'No se encontró el identificador externo del contacto para este canal.';
       } else if (!isWithinMessagingWindow(conversation.last_inbound_at)) {
-        sendError = 'Fuera de la ventana de 24 horas — requiere una plantilla aprobada (Fase 5).';
+        sendError =
+          'Fuera de la ventana de 24 horas — la IA no envía plantillas por su cuenta; el dueño puede reabrir la conversación con una plantilla aprobada desde el inbox.';
       } else {
         try {
           const externalId = await sendTextViaMeta(conversation.channel, channelRow.external_id, replyText);

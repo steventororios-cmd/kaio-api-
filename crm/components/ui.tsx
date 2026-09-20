@@ -19,15 +19,9 @@ export function Badge({
   );
 }
 
-export function Card({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+export function Card({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={clsx('rounded-lg border border-gray-200 bg-white', className)}>
+    <div className={clsx('rounded-lg border border-gray-200 bg-white', className)} {...props}>
       {children}
     </div>
   );

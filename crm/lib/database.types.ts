@@ -642,7 +642,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      response_time_seconds: {
+        Row: {
+          channel: Database["public"]["Enums"]["channel_type"] | null
+          conversation_id: string | null
+          message_id: string | null
+          response_seconds: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never

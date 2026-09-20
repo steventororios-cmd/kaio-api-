@@ -1,8 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { PageHeader, Card, Select, Input, Button } from '@/components/ui';
 import { createDeal } from '@/lib/actions/deals';
-import { DealStageSelect } from '@/components/DealStageSelect';
-import { formatCOP } from '@/lib/types';
+import { PipelineBoard } from '@/components/PipelineBoard';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,11 +17,6 @@ export default async function PipelinePage() {
     db.from('contacts').select('id, full_name').order('full_name'),
     db.from('tours').select('id, name').eq('active', true).order('name'),
   ]);
-
-  const dealsByStage: Record<string, any[]> = {};
-  for (const d of deals ?? []) {
-    (dealsByStage[d.stage_id] ??= []).push(d);
-  }
 
   return (
     <div>
@@ -72,32 +66,7 @@ export default async function PipelinePage() {
         }
       />
 
-      <div className="flex gap-4 overflow-x-auto p-6">
-        {(stages ?? []).map((stage) => (
-          <div key={stage.id} className="w-72 shrink-0">
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">{stage.name}</h3>
-              <span className="text-xs text-gray-400">{dealsByStage[stage.id]?.length ?? 0}</span>
-            </div>
-            <div className="space-y-2">
-              {(dealsByStage[stage.id] ?? []).map((d) => (
-                <Card key={d.id} className="p-3">
-                  <p className="text-sm font-medium text-gray-900">
-                    {d.contacts?.full_name || 'Sin nombre'}
-                  </p>
-                  {d.title && <p className="text-xs text-gray-500">{d.title}</p>}
-                  <p className="mt-1 text-xs text-gray-500">
-                    {formatCOP(d.value_cop)} · {d.pax ?? '?'} pax
-                  </p>
-                  <div className="mt-2">
-                    <DealStageSelect dealId={d.id} currentStageId={stage.id} stages={stages ?? []} />
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      <PipelineBoard stages={stages ?? []} deals={(deals ?? []) as any} />
     </div>
   );
 }

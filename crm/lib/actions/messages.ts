@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { sendMessage, isWithinMessagingWindow } from '@/lib/meta/send';
+import { sendMessage, sendTemplateMessage, isWithinMessagingWindow } from '@/lib/meta/send';
 import { logEvent } from './events';
 
 /**
@@ -79,6 +79,83 @@ export async function sendManualMessage(conversationId: string, formData: FormDa
   });
 
   revalidatePath(`/inbox`);
+}
+
+/**
+ * Envía una plantilla de WhatsApp pre-aprobada — el único mecanismo
+ * permitido para reabrir una conversación fuera de la ventana de 24h.
+ * El nombre de la plantilla y sus parámetros deben coincidir con una ya
+ * aprobada por Meta para tu número (Meta Business Manager → WhatsApp
+ * Manager → Plantillas de mensajes); esto no crea plantillas nuevas.
+ */
+export async function sendTemplateReply(conversationId: string, formData: FormData) {
+  const templateName = String(formData.get('template_name') ?? '').trim();
+  if (!templateName) return;
+  const languageCode = String(formData.get('language_code') ?? 'es').trim() || 'es';
+  const paramsRaw = String(formData.get('params') ?? '').trim();
+  const bodyParams = paramsRaw ? paramsRaw.split('|').map((s) => s.trim()) : [];
+
+  const db = supabaseAdmin();
+  const { data: conversation, error: convError } = await db
+    .from('conversations')
+    .select('id, channel, contact_id')
+    .eq('id', conversationId)
+    .single();
+  if (convError || !conversation) throw new Error(convError?.message ?? 'Conversación no encontrada');
+
+  if (conversation.channel !== 'whatsapp') {
+    throw new Error('Las plantillas solo están soportadas para WhatsApp por ahora.');
+  }
+
+  const { data: channelRow } = await db
+    .from('contact_channels')
+    .select('external_id')
+    .eq('contact_id', conversation.contact_id)
+    .eq('channel', 'whatsapp')
+    .maybeSingle();
+
+  let externalMessageId: string | null = null;
+  let sendError: string | null = null;
+
+  if (!channelRow) {
+    sendError = 'No se encontró el identificador de WhatsApp de este contacto.';
+  } else {
+    try {
+      externalMessageId = await sendTemplateMessage(channelRow.external_id, templateName, languageCode, bodyParams);
+    } catch (e) {
+      sendError = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  const { error } = await db.from('messages').insert({
+    conversation_id: conversationId,
+    direction: 'outbound',
+    channel: 'whatsapp',
+    external_message_id: externalMessageId,
+    sender_type: 'agent_human',
+    content_type: 'template',
+    text_body: `[Plantilla: ${templateName}]${bodyParams.length ? ' ' + bodyParams.join(' | ') : ''}`,
+    status: sendError ? 'failed' : 'sent',
+    raw_payload: sendError
+      ? { error: sendError }
+      : { template_name: templateName, language_code: languageCode, params: bodyParams },
+  });
+  if (error) throw new Error(error.message);
+
+  await db
+    .from('conversations')
+    .update({ ai_enabled: false, last_message_at: new Date().toISOString() })
+    .eq('id', conversationId);
+
+  await logEvent({
+    event_type: sendError ? 'template_reply_failed' : 'template_reply_sent',
+    actor: 'owner',
+    contact_id: conversation.contact_id,
+    conversation_id: conversationId,
+    payload: { template_name: templateName, error: sendError ?? undefined },
+  });
+
+  revalidatePath('/inbox');
 }
 
 export async function toggleAiEnabled(conversationId: string, enabled: boolean) {

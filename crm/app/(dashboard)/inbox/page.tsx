@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { PageHeader, Badge, Card } from '@/components/ui';
 import { CHANNEL_LABELS, CHANNEL_COLORS } from '@/lib/types';
-import { sendManualMessage, toggleAiEnabled, markConversationRead } from '@/lib/actions/messages';
+import { sendManualMessage, sendTemplateReply, toggleAiEnabled, markConversationRead } from '@/lib/actions/messages';
+import { isWithinMessagingWindow } from '@/lib/meta/send';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,7 @@ export default async function InboxPage({
   if (selectedId) {
     const { data: conv } = await db
       .from('conversations')
-      .select('id, channel, ai_enabled, contact:contacts(id, full_name, phone, email)')
+      .select('id, channel, ai_enabled, last_inbound_at, contact:contacts(id, full_name, phone, email)')
       .eq('id', selectedId)
       .maybeSingle();
     selectedConversation = conv;
@@ -152,25 +153,73 @@ export default async function InboxPage({
                 ))}
               </div>
 
-              <form
-                action={async (formData: FormData) => {
-                  'use server';
-                  await sendManualMessage(selectedConversation.id, formData);
-                }}
-                className="flex gap-2 border-t border-gray-200 bg-white p-4"
-              >
-                <input
-                  name="text_body"
-                  placeholder="Escribe una respuesta manual…"
-                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                />
-                <button
-                  type="submit"
-                  className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+              {selectedConversation.channel === 'internal' ||
+              isWithinMessagingWindow(selectedConversation.last_inbound_at) ? (
+                <form
+                  action={async (formData: FormData) => {
+                    'use server';
+                    await sendManualMessage(selectedConversation.id, formData);
+                  }}
+                  className="flex gap-2 border-t border-gray-200 bg-white p-4"
                 >
-                  Enviar
-                </button>
-              </form>
+                  <input
+                    name="text_body"
+                    placeholder="Escribe una respuesta manual…"
+                    className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+                  >
+                    Enviar
+                  </button>
+                </form>
+              ) : selectedConversation.channel === 'whatsapp' ? (
+                <form
+                  action={async (formData: FormData) => {
+                    'use server';
+                    await sendTemplateReply(selectedConversation.id, formData);
+                  }}
+                  className="space-y-2 border-t border-amber-200 bg-amber-50 p-4"
+                >
+                  <p className="text-xs text-amber-800">
+                    Han pasado más de 24h desde el último mensaje del lead — WhatsApp exige una plantilla aprobada
+                    para reabrir la conversación.
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      name="template_name"
+                      placeholder="nombre_de_la_plantilla"
+                      required
+                      className="w-48 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    />
+                    <input
+                      name="language_code"
+                      placeholder="es"
+                      defaultValue="es"
+                      className="w-16 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    />
+                    <input
+                      name="params"
+                      placeholder="parámetros separados por | (opcional)"
+                      className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                    >
+                      Enviar plantilla
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="border-t border-gray-200 bg-gray-50 p-4">
+                  <p className="text-xs text-gray-500">
+                    Han pasado más de 24h desde el último mensaje del lead. Este canal todavía no soporta plantillas
+                    para reabrir la conversación — espera a que el lead vuelva a escribir.
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { logout } from '@/app/login/actions';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 const NAV = [
   { href: '/inbox', label: 'Inbox', icon: '💬' },
@@ -7,16 +8,33 @@ const NAV = [
   { href: '/contacts', label: 'Contactos', icon: '👤' },
   { href: '/tasks', label: 'Tareas', icon: '✅' },
   { href: '/tours', label: 'Tours', icon: '🧭' },
+  { href: '/reports', label: 'Reportes', icon: '📈' },
   { href: '/settings', label: 'Configuración', icon: '⚙️' },
 ];
 
-export function Sidebar() {
+export async function Sidebar() {
+  const db = supabaseAdmin();
+  const { count: handoffCount } = await db
+    .from('tasks')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending')
+    .eq('created_by', 'ai')
+    .ilike('title', 'Handoff%');
+
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r border-gray-200 bg-white">
       <div className="px-4 py-5">
         <p className="text-sm font-semibold text-gray-900">Aventuras CRM</p>
         <p className="text-xs text-gray-500">Aventuras Tour Medellín</p>
       </div>
+      {!!handoffCount && (
+        <Link
+          href="/tasks"
+          className="mx-2 mb-2 flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 hover:bg-amber-100"
+        >
+          🔔 {handoffCount} handoff{handoffCount === 1 ? '' : 's'} de IA pendiente{handoffCount === 1 ? '' : 's'}
+        </Link>
+      )}
       <nav className="flex-1 space-y-1 px-2">
         {NAV.map((item) => (
           <Link

@@ -4,7 +4,7 @@ CRM interno de **Aventuras Tour Medellín**: inbox multicanal (WhatsApp, Instagr
 
 Proyecto nuevo e independiente del resto del repo (el sitio público en `site/` y el backend de Google Ads `index.js.js` no se tocan ni comparten base de datos).
 
-## Estado: Fases 1, 2, 3 y 4 completas
+## Estado: Fases 1 a 5 completas — plan original terminado
 
 **Fase 1 — CRM base:** esquema completo en Supabase (RLS deny-by-default), catálogo de 16 tours sembrado desde `site/js/data.js`, panel protegido por contraseña con Inbox, Pipeline, Contactos, Tareas, Tours y Configuración del agente.
 
@@ -22,7 +22,14 @@ Proyecto nuevo e independiente del resto del repo (el sitio público en `site/` 
 - La transcripción/análisis se guarda en el mensaje **aunque la IA esté en pausa** — el dueño se beneficia de igual forma al leer el inbox.
 - **`send_tour_photo` ahora genera una imagen de respaldo con `gpt-image-1`** cuando el tour todavía no tiene foto real en el catálogo (queda marcada como `ai_generated` en `tour_media`, para que el dueño la reemplace después por una foto de verdad).
 
-Todavía no incluido (Fase 5, ver el plan): reportes, plantillas de WhatsApp para fuera de la ventana de 24h, debounce de mensajes rápidos, notificaciones de handoff.
+**Fase 5 — Pulido de pipeline y reportes:**
+- **Pipeline con drag-and-drop**: arrastra un deal de una columna a otra para cambiarle la etapa (antes era un dropdown).
+- **`/reports`**: leads por canal, conversión por etapa del pipeline (con valor en COP), y tiempo de respuesta promedio (general y por canal) — calculado con una vista SQL (`response_time_seconds`) que mide cuánto tarda cada mensaje entrante en recibir una respuesta saliente.
+- **Plantillas de WhatsApp**: cuando han pasado más de 24h desde el último mensaje del lead, el inbox reemplaza el composer normal por un formulario para enviar una plantilla pre-aprobada (nombre + parámetros). La IA nunca envía plantillas por su cuenta — solo el dueño puede reabrir la conversación así. **Importante**: esto envía plantillas, no las crea — la plantilla debe existir y estar aprobada por Meta de antemano (Meta Business Manager → WhatsApp Manager → Plantillas de mensajes), un proceso que solo tú puedes iniciar.
+- **Debounce de mensajes rápidos**: si un lead manda varios mensajes seguidos, la IA espera unos segundos y solo responde una vez al último, con todo el contexto — no una respuesta por cada mensaje suelto.
+- **Notificación de handoffs**: cuando la IA le pasa una conversación a un humano, aparece un aviso 🔔 en el menú lateral con el conteo de handoffs pendientes.
+
+Con esto se completan las 5 fases del plan original. Lo único que queda es lo que solo tú puedes hacer: conectar tus credenciales reales de Meta/OpenAI y aprobar plantillas de WhatsApp ante Meta (ver secciones de abajo).
 
 ## Cómo correrlo localmente
 
@@ -96,9 +103,10 @@ Una nota de transparencia sobre el entorno donde trabajo: no tengo salida de red
 - Repliqué la lógica SQL de las 5 tools (`create_deal`, `update_deal_stage`, `schedule_followup_task`, `add_tag`, y el toggle de `handoff_to_human`) contra el esquema real — todas ejecutan correctamente.
 - Un aviso de seguridad de Supabase (`get_advisors`) señaló que la función del trigger era invocable públicamente vía RPC (`anon`/`authenticated`) — la corregí revocando esos permisos, y confirmé que el trigger sigue funcionando igual después del cambio.
 - **Fase 4**: mandé un mensaje de texto (regresión — sigue funcionando igual tras dividir el código en módulos), uno de audio con un `raw_payload` realista de WhatsApp, y uno de tipo `video` (fuera de alcance) — los tres se comportaron exactamente como debían: el de texto y el de audio se reclamaron y respondieron `"OPENAI_API_KEY not configured"`, y el de video se ignoró sin reclamarlo (`ai_processed` se quedó en `false`), como corresponde a un tipo de contenido que no se procesa. También confirmé que los 3 buckets de Storage (`tour-media` público, `generated-media` público, `inbound-media` privado) están configurados exactamente como la tool `send_tour_photo` los espera.
-- `npm run build` y `tsc --noEmit` pasan limpio (tuve que excluir `supabase/functions/` del typecheck de Next.js — es código Deno, no Node).
+- **Fase 5**: probé la vista `response_time_seconds` con un par de mensajes reales (entrante + saliente 5 minutos después) y calculó exactamente 300 segundos. Un aviso de seguridad ERROR de Supabase señaló que esa vista corría con permisos del creador en vez de con los de quien consulta (bypasseando RLS) — lo corregí con `security_invoker = true` y confirmé que el aviso desapareció. También verifiqué la consulta que usa el badge de handoffs pendientes contra una tarea de prueba (contó 1 correctamente), y la consulta de "último mensaje entrante" de la que depende el debounce (devolvió el mensaje más reciente de dos, como debía). Lo único que no pude ver disparar en vivo fue el debounce en sí: el chequeo de `OPENAI_API_KEY` corre antes en el código (por diseño, para fallar rápido sin gastar tiempo), así que sin esa clave nunca se llega a la lógica de debounce en una invocación real — la verifiqué indirectamente, no en acción.
+- `npm run build` y `tsc --noEmit` pasan limpio en todo el proyecto (tuve que excluir `supabase/functions/` del typecheck de Next.js — es código Deno, no Node).
 
-**No pude verificar** (necesita tu `OPENAI_API_KEY`, que no tengo, y las llamadas reales a OpenAI tampoco las puedo hacer yo mismo desde este entorno): una respuesta real generada por el modelo, una transcripción de audio real, un análisis de imagen real, una imagen generada de verdad, ni el envío de cualquiera de esas respuestas por WhatsApp/Instagram/Messenger. Es decir: verifiqué que todo el camino hasta la llamada a OpenAI funciona correctamente (recepción, gatekeeping, descarga de media, manejo de errores), pero no la respuesta de OpenAI en sí. En cuanto pongas la clave en los Secrets de Supabase (sección de arriba), debería funcionar sin más cambios de código.
+**No pude verificar** (necesita tu `OPENAI_API_KEY`, que no tengo, y las llamadas reales a OpenAI tampoco las puedo hacer yo mismo desde este entorno): una respuesta real generada por el modelo, una transcripción de audio real, un análisis de imagen real, una imagen generada de verdad, el debounce disparando en una invocación real, ni el envío de cualquiera de esas respuestas por WhatsApp/Instagram/Messenger o de una plantilla real (que además necesita una plantilla ya aprobada por Meta). Es decir: verifiqué que todo el camino hasta la llamada a OpenAI/Meta funciona correctamente (recepción, gatekeeping, descarga de media, manejo de errores, cálculos de reportes), pero no la respuesta de esos servicios externos en sí. En cuanto pongas las claves (sección de arriba), debería funcionar sin más cambios de código.
 
 ## Desplegar a producción
 

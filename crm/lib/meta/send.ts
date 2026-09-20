@@ -82,6 +82,46 @@ async function sendInstagram(externalContactId: string, content: OutgoingContent
   return json.message_id;
 }
 
+/**
+ * Plantilla pre-aprobada de WhatsApp — el único mecanismo permitido para
+ * escribirle a un lead fuera de la ventana de 24h desde su último mensaje.
+ * El nombre y los parámetros deben coincidir con una plantilla ya aprobada
+ * por Meta para tu WhatsApp Business Account (Meta Business Manager →
+ * WhatsApp Manager → Plantillas de mensajes) — esta función no crea ni
+ * aprueba plantillas, solo las envía.
+ */
+export async function sendTemplateMessage(
+  externalContactId: string,
+  templateName: string,
+  languageCode: string,
+  bodyParams: string[]
+): Promise<string> {
+  const accessToken = requireEnv('WHATSAPP_ACCESS_TOKEN');
+  const phoneNumberId = requireEnv('WHATSAPP_PHONE_NUMBER_ID');
+
+  const body = {
+    messaging_product: 'whatsapp',
+    to: externalContactId,
+    type: 'template',
+    template: {
+      name: templateName,
+      language: { code: languageCode },
+      ...(bodyParams.length > 0
+        ? { components: [{ type: 'body', parameters: bodyParams.map((text) => ({ type: 'text', text })) }] }
+        : {}),
+    },
+  };
+
+  const res = await fetch(`https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(`Envío de plantilla de WhatsApp falló: ${JSON.stringify(json)}`);
+  return json.messages?.[0]?.id;
+}
+
 /** Devuelve el id externo del mensaje enviado (para idempotencia/tracking). */
 export async function sendMessage(
   channel: MetaChannel,
