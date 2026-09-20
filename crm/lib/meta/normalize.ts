@@ -23,7 +23,7 @@ export interface InternalMessage {
   externalMessageId: string;
   contentType: InternalContentType;
   text?: string;
-  /** Solo WhatsApp: requiere resolverse vía Graph API + token (ver lib/meta/media.ts) */
+  /** Solo WhatsApp: requiere resolverse vía Graph API + token (ver supabase/functions/agent-process-message/media.ts) */
   mediaId?: string;
   /** Messenger/Instagram: URL de adjunto directamente descargable */
   mediaUrl?: string;
