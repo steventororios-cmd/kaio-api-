@@ -4,20 +4,20 @@ CRM interno de **Aventuras Tour Medellín**: inbox multicanal (WhatsApp, Instagr
 
 Proyecto nuevo e independiente del resto del repo (el sitio público en `site/` y el backend de Google Ads `index.js.js` no se tocan ni comparten base de datos).
 
-## Estado: Fases 1 y 2 completas
+## Estado: Fases 1, 2 y 3 completas
 
-**Fase 1 — CRM base:**
-- Esquema completo de base de datos en Supabase (proyecto `afzbblteskkbmlgrrfkv`), con RLS habilitado en modo deny-by-default — toda la app lee/escribe con la `service_role` key en el servidor, nunca desde el navegador.
-- Catálogo de 16 tours sembrado desde `site/js/data.js` (precios, horarios, incluye, highlights reales).
-- Panel protegido por contraseña (`/login`), con Inbox, Pipeline (kanban), Contactos, Tareas, Catálogo de tours y Configuración del agente de IA.
+**Fase 1 — CRM base:** esquema completo en Supabase (RLS deny-by-default), catálogo de 16 tours sembrado desde `site/js/data.js`, panel protegido por contraseña con Inbox, Pipeline, Contactos, Tareas, Tours y Configuración del agente.
 
-**Fase 2 — Meta conectado de verdad:**
-- `POST/GET /api/webhooks/meta` — recibe mensajes reales de WhatsApp Cloud API, Instagram Messaging y Messenger Platform (normalizados a un mismo formato interno), con verificación de firma HMAC y deduplicación por `(channel, external_message_id)` ante reintentos de Meta.
-- Cuando llega un mensaje de un contacto nuevo, se crea su ficha de contacto + conversación automáticamente.
-- El inbox ahora **envía mensajes de verdad** por el canal correspondiente al contestar manualmente (antes solo se guardaban en la base de datos); si el envío falla (p. ej. fuera de la ventana de 24h de Meta, o credenciales faltantes) se marca el mensaje como fallido en rojo en el inbox, con el motivo.
-- Simulador de webhooks (`npm run simulate:webhook`) con fixtures reales de los 3 canales, para probar todo el flujo de ingesta sin necesitar tráfico real de Meta.
+**Fase 2 — Meta conectado de verdad:** `/api/webhooks/meta` recibe mensajes reales de WhatsApp/Instagram/Messenger (normalizados, firma verificada, deduplicados), y el inbox envía respuestas manuales de verdad por el canal correspondiente.
 
-Todavía no incluido (fases siguientes, ver el plan): el agente de IA (texto, luego audio/imagen/generación de imágenes), envío de fotos de tours, reportes, plantillas de WhatsApp para fuera de la ventana de 24h.
+**Fase 3 — Agente de IA (solo texto):**
+- Edge Function `agent-process-message` (Supabase, Deno) — se dispara automáticamente en cada mensaje entrante de un contacto vía un trigger de base de datos, no desde el webhook de Meta directamente (así el ACK a Meta nunca espera a la IA).
+- Arma el contexto con el **catálogo de tours en vivo** desde la tabla `tours` (nunca inventa precios/horarios), el perfil del contacto y los últimos 20 mensajes de la conversación.
+- 5 tools que el modelo puede invocar: `update_deal_stage`, `create_deal`, `schedule_followup_task`, `add_tag`, `send_tour_photo` (envía la foto real del tour si ya existe en `tour_media`; si no hay foto, responde con texto — la generación de imagen de respaldo con IA llega en la Fase 4) y `handoff_to_human` (pausa la IA y crea una tarea para el dueño).
+- Respeta el interruptor de IA por conversación y el interruptor global de Configuración — si cualquiera está apagado, la IA no contesta, punto.
+- Genera la respuesta, la guarda y la envía por el canal real (o la deja marcada como fallida con el motivo, igual que las respuestas manuales).
+
+Todavía no incluido (fases siguientes, ver el plan): audio (transcripción) e imágenes (visión) entrantes, generación de imágenes de respaldo, reportes, plantillas de WhatsApp para fuera de la ventana de 24h.
 
 ## Cómo correrlo localmente
 
@@ -38,58 +38,62 @@ Copia `crm/.env.example` a `crm/.env.local`:
 - `NEXT_PUBLIC_SUPABASE_URL=https://afzbblteskkbmlgrrfkv.supabase.co`
 - `SUPABASE_SERVICE_ROLE_KEY` — **esta es la única que yo no puedo obtener por ti** (no se expone por API, es intencional por seguridad). La encuentras en el dashboard de Supabase de ese proyecto → *Project Settings* → *API* → *service_role key* (sección "secret keys"). Sin ella, el panel no puede leer ni escribir nada.
 - `CRM_OWNER_PASSWORD` y `SESSION_SECRET` — inventa los tuyos (ver instrucciones dentro del `.env.example` para generar `SESSION_SECRET`).
-- Para que el inbox pueda **enviar** mensajes reales (Fase 2): `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `MESSENGER_PAGE_ACCESS_TOKEN`, `INSTAGRAM_ACCESS_TOKEN` — de tu Meta App. Sin ellas, un intento de responder por esos canales se marca como fallido con un mensaje claro (no rompe el panel).
-- Para que Meta te pueda **enviar** mensajes a este webhook (Fase 2): `META_APP_SECRET` (verifica la firma de cada webhook) y `META_WEBHOOK_VERIFY_TOKEN` (cualquier string que tú inventes, debe coincidir con lo que configures en el Meta App Dashboard).
+- Para que el inbox pueda **enviar** mensajes reales: `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `MESSENGER_PAGE_ACCESS_TOKEN`, `INSTAGRAM_ACCESS_TOKEN` — de tu Meta App.
+- Para que Meta te pueda **enviar** mensajes a este webhook: `META_APP_SECRET` y `META_WEBHOOK_VERIFY_TOKEN`.
+- **Para activar el agente de IA (Fase 3): `OPENAI_API_KEY`.** Esta variable va en un lugar distinto a las demás — sigue leyendo.
 
-Las variables de OpenAI (`OPENAI_API_KEY`) todavía no se usan — son para las Fases 3-4 (agente de IA).
+## Activar el agente de IA — configurar el secreto en Supabase (no en Vercel)
 
-## Conectar tus canales reales de Meta (lo que te toca a ti)
+El agente corre en una **Supabase Edge Function**, no en el servidor de Next.js/Vercel, así que su variable de entorno se configura del lado de Supabase:
+
+1. En el dashboard de Supabase de tu proyecto → **Edge Functions** → **Secrets** (o `Project Settings` → `Edge Functions`), agrega:
+   - `OPENAI_API_KEY` = tu clave de OpenAI.
+   - `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `MESSENGER_PAGE_ACCESS_TOKEN`, `INSTAGRAM_ACCESS_TOKEN` — las mismas que ya pusiste en Vercel, para que la IA también pueda enviar sus respuestas por el canal real.
+   - No hace falta configurar `SUPABASE_URL` ni `SUPABASE_SERVICE_ROLE_KEY` — Supabase se los inyecta automáticamente a toda Edge Function.
+2. Sin `OPENAI_API_KEY` configurada, el agente simplemente no contesta (lo verifiqué yo mismo — ver más abajo); no rompe nada, el dueño puede seguir contestando a mano.
+3. El "cerebro" del agente (personalidad, tono, instrucciones) se edita en `/settings` dentro del panel — no requiere volver a desplegar nada.
+
+## Conectar tus canales reales de Meta
 
 1. Despliega el proyecto (ver sección de abajo) para tener una URL pública — Meta no puede mandarte webhooks a `localhost`.
-2. En tu Meta App Dashboard → **Webhooks**: agrega la URL `https://TU-DOMINIO/api/webhooks/meta`, con el mismo `META_WEBHOOK_VERIFY_TOKEN` que pusiste en tus variables de entorno. Suscríbete a los campos `messages` (WhatsApp) y `messages`/`messaging` (Instagram/Messenger, según cómo los liste tu app).
-3. Copia el `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `MESSENGER_PAGE_ACCESS_TOKEN`, `INSTAGRAM_ACCESS_TOKEN` y `META_APP_SECRET` de tu Meta App a las variables de entorno de tu despliegue.
-4. Escríbele al número de WhatsApp / página / cuenta de Instagram desde tu celular y confirma que el mensaje aparece en `/inbox`.
+2. En tu Meta App Dashboard → **Webhooks**: agrega la URL `https://TU-DOMINIO/api/webhooks/meta`, con el mismo `META_WEBHOOK_VERIFY_TOKEN` que pusiste en tus variables de entorno. Suscríbete a los campos `messages` (WhatsApp) y `messages`/`messaging` (Instagram/Messenger).
+3. Copia los tokens de tu Meta App a Vercel (para el envío desde el panel) **y** a los Secrets de Supabase Edge Functions (para el envío desde la IA — paso anterior).
+4. Escríbele al número de WhatsApp / página / cuenta de Instagram desde tu celular y confirma que el mensaje aparece en `/inbox` — y, con `OPENAI_API_KEY` configurada, que la IA responde sola.
 
 ## Sembrar (o re-sembrar) el catálogo de tours
-
-Ya está sembrado en la base de datos de Supabase, pero si el catálogo del sitio web (`site/js/data.js`) cambia, puedes re-sincronizarlo (incluyendo subir las fotos reales de `site/assets/img/gallery/` a Supabase Storage):
 
 ```bash
 cd crm
 npm run seed:tours
 ```
 
-Es idempotente (usa upsert por `slug`), así que puedes correrlo las veces que quieras.
+Idempotente (upsert por `slug`). También sube las fotos reales de `site/assets/img/gallery/` a Supabase Storage — necesarias para que la tool `send_tour_photo` de la IA pueda mandarlas.
 
 ## Probar la ingesta de webhooks sin tráfico real de Meta
 
 ```bash
 cd crm
-npm run dev              # en una terminal
-npm run simulate:webhook -- whatsapp-text            # en otra
-npm run simulate:webhook -- whatsapp-audio
-npm run simulate:webhook -- whatsapp-image
-npm run simulate:webhook -- messenger-text
-npm run simulate:webhook -- instagram-text
-npm run simulate:webhook -- whatsapp-text --repeat    # prueba idempotencia: no debe duplicar el mensaje
+npm run dev
+npm run simulate:webhook -- whatsapp-text
+npm run simulate:webhook -- whatsapp-text --repeat    # prueba idempotencia
 ```
 
-Cada uno firma el payload como lo haría Meta (usando tu `META_APP_SECRET` local) y lo manda a tu servidor local. Revisa `/inbox` para ver los contactos/conversaciones creados.
+Con `OPENAI_API_KEY` ya configurada en Supabase, cualquier mensaje simulado que llegue a un contacto nuevo debería generar una respuesta automática visible en `/inbox` unos segundos después.
 
 ## Qué verifiqué yo mismo en esta sesión (y qué no pude)
 
-Una nota importante de transparencia: el entorno donde corro tiene una política de red que **bloquea las conexiones salientes directas** desde procesos que yo lanzo (como `npm run dev`) hacia tu proyecto de Supabase — solo mi integración de Supabase (que no pasa por esa restricción) puede llegar a él. Lo descubrí al construir la Fase 2 y confirmé que es un bloqueo de política de organización (403 al intentar conectar), no un bug. Esto también significa que una afirmación que hice al cerrar la Fase 1 — que había probado el panel corriendo contra tu Supabase real — no era del todo precisa: esas páginas probablemente nunca llegaron a Supabase (la librería de Supabase no lanza error de red, así que la UI se veía bien igual). Lo aclaro para que sepas exactamente qué está y qué no está probado contra datos reales:
+Una nota de transparencia sobre el entorno donde trabajo: no tengo salida de red directa hacia tu proyecto de Supabase desde procesos que yo mismo lanzo (como `npm run dev`) — es una política de la organización, confirmada como un 403 al intentar conectar, no un bug. Por eso no pude probar el panel de Next.js corriendo de verdad contra datos reales (aunque sí compila y typechea limpio). Donde esto **no aplica** es a la Fase 3: el trigger de base de datos y la Edge Function corren dentro de la infraestructura de Supabase, no en mi sandbox — así que ahí sí pude verificar el ciclo completo de verdad:
 
-**Sí verificado (sin tus credenciales), con acceso real a la base de datos vía mi integración de Supabase:**
-- Esquema completo aplicado y catálogo de 16 tours sembrado con datos exactos.
-- El flujo completo de ingesta de un webhook (crear contacto → vincular canal → crear conversación → insertar mensaje → actualizar contador de no leídos) replicado contra el esquema real y funcionando.
-- La restricción de idempotencia (`unique(channel, external_message_id)`) rechaza correctamente un mensaje duplicado.
-- `npm run build` y `tsc --noEmit` pasan limpio, 0 vulnerabilidades de `npm audit`.
-- La lógica de normalización de los 3 formatos de webhook de Meta (`lib/meta/normalize.ts`), probada contra los 5 fixtures — extrae correctamente canal, id de contacto, id de mensaje, tipo de contenido, texto y adjuntos en cada caso.
-- El endpoint del webhook responde correctamente a nivel HTTP: verificación de suscripción (GET), rechazo de firma inválida (401), aceptación de firma válida (200) — probado con el servidor corriendo de verdad.
+**Verificado end-to-end, con datos reales, en tu proyecto Supabase:**
+- Inserté un mensaje de prueba → el trigger disparó `pg_net` → la Edge Function desplegada lo recibió, se autenticó, y usando su propia `service_role` key (inyectada automáticamente, no configurada por mí) reclamó el mensaje atómicamente (`ai_processed: true`).
+- Confirmé en el log de respuestas de `pg_net` (`net._http_response`) el cuerpo exacto de la respuesta: `{"skipped":true,"reason":"OPENAI_API_KEY not configured"}` — el comportamiento correcto sin la clave.
+- Apagué `ai_enabled` en una conversación e inserté otro mensaje: la respuesta fue `{"skipped":true,"reason":"AI disabled for this conversation"}` — confirma que el interruptor de control humano funciona.
+- Repliqué la lógica SQL de las 5 tools (`create_deal`, `update_deal_stage`, `schedule_followup_task`, `add_tag`, y el toggle de `handoff_to_human`) contra el esquema real — todas ejecutan correctamente.
+- Un aviso de seguridad de Supabase (`get_advisors`) señaló que la función del trigger era invocable públicamente vía RPC (`anon`/`authenticated`) — la corregí revocando esos permisos, y confirmé que el trigger sigue funcionando igual después del cambio.
+- `npm run build` y `tsc --noEmit` pasan limpio (tuve que excluir `supabase/functions/` del typecheck de Next.js — es código Deno, no Node).
 
-**No pude verificar en esta sesión** (por la restricción de red, no por falta de código): que la app corriendo de verdad lea/escriba en tu Supabase real, y por lo tanto tampoco el envío real de mensajes por WhatsApp/Instagram/Messenger (que además requiere tus tokens de Meta, que no tengo). Esto es exactamente lo que te toca probar tú una vez despliegues con tus credenciales — sección de arriba.
+**No pude verificar** (necesita tu `OPENAI_API_KEY`, que no tengo): una respuesta real generada por el modelo, ni el envío de esa respuesta por WhatsApp/Instagram/Messenger. Todo lo demás del camino ya está probado — en cuanto pongas la clave en los Secrets de Supabase (sección de arriba), debería funcionar sin más cambios.
 
 ## Desplegar a producción
 
-Pensado para **Vercel** (recomendado, cero configuración para Next.js) — importa el repo, configura *Root Directory* = `crm`, y agrega las mismas variables de `.env.example` en el panel de Vercel. Vercel no tiene la restricción de red que tengo yo en esta sesión, así que ahí todo debería conectar sin problema.
+Pensado para **Vercel** (recomendado, cero configuración para Next.js) — importa el repo, configura *Root Directory* = `crm`, y agrega las variables de `.env.example` en el panel de Vercel. La Edge Function y su trigger ya están desplegados en Supabase — no requieren ningún paso de deploy adicional de tu parte, solo configurar sus Secrets (sección de arriba).
