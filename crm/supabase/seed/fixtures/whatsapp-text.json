@@ -1,0 +1,27 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "WABA_ID_TEST",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": { "display_phone_number": "573104464298", "phone_number_id": "PHONE_NUMBER_ID_TEST" },
+            "contacts": [{ "profile": { "name": "Camila Restrepo" }, "wa_id": "573001234567" }],
+            "messages": [
+              {
+                "from": "573001234567",
+                "id": "wamid.TEST_TEXT_001",
+                "timestamp": "1758300000",
+                "type": "text",
+                "text": { "body": "Hola! Quiero info del tour a Guatapé para el sábado" }
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}

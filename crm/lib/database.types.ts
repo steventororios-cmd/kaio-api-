@@ -162,6 +162,7 @@ export type Database = {
           created_at: string
           deal_id: string | null
           id: string
+          last_inbound_at: string | null
           last_message_at: string | null
           status: string
           unread_count: number
@@ -174,6 +175,7 @@ export type Database = {
           created_at?: string
           deal_id?: string | null
           id?: string
+          last_inbound_at?: string | null
           last_message_at?: string | null
           status?: string
           unread_count?: number
@@ -186,6 +188,7 @@ export type Database = {
           created_at?: string
           deal_id?: string | null
           id?: string
+          last_inbound_at?: string | null
           last_message_at?: string | null
           status?: string
           unread_count?: number

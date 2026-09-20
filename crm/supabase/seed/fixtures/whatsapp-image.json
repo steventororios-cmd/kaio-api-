@@ -1,0 +1,31 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "WABA_ID_TEST",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": { "display_phone_number": "573104464298", "phone_number_id": "PHONE_NUMBER_ID_TEST" },
+            "contacts": [{ "profile": { "name": "Laura Gómez" }, "wa_id": "573005551212" }],
+            "messages": [
+              {
+                "from": "573005551212",
+                "id": "wamid.TEST_IMAGE_001",
+                "timestamp": "1758300200",
+                "type": "image",
+                "image": {
+                  "id": "MEDIA_ID_TEST_IMAGE",
+                  "mime_type": "image/jpeg",
+                  "caption": "¿Este es el comprobante de la transferencia?"
+                }
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}

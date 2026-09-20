@@ -10,11 +10,16 @@
  *
  * Es idempotente: se puede correr varias veces (upsert por slug).
  */
-import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+
+// Next.js usa .env.local para desarrollo; este script standalone no pasa
+// por Next, así que cargamos el mismo archivo explícitamente.
+dotenv.config({ path: path.join(__dirname, '../../.env.local') });
+dotenv.config(); // .env como respaldo
 
 interface SiteTour {
   id: string;

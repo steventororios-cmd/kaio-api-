@@ -2,13 +2,15 @@
 
 import { revalidatePath } from 'next/cache';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendMessage, isWithinMessagingWindow } from '@/lib/meta/send';
 import { logEvent } from './events';
 
 /**
- * Fase 1: envía un mensaje "manual" desde el panel. Se guarda en `messages`
- * como saliente de un humano y apaga el piloto automático de la IA para esa
- * conversación (escribir manualmente = tomar el control). El envío real por
- * WhatsApp/Instagram/Messenger se conecta en la Fase 2 (lib/meta/send.ts).
+ * Envía un mensaje "manual" desde el panel: para canales reales
+ * (WhatsApp/Instagram/Messenger) lo manda de verdad vía Graph API antes de
+ * guardarlo; para conversaciones internas solo lo guarda. Escribir a mano
+ * apaga el piloto automático de la IA para esa conversación (tomar el
+ * control).
  */
 export async function sendManualMessage(conversationId: string, formData: FormData) {
   const text_body = String(formData.get('text_body') ?? '').trim();
@@ -17,19 +19,49 @@ export async function sendManualMessage(conversationId: string, formData: FormDa
   const db = supabaseAdmin();
   const { data: conversation, error: convError } = await db
     .from('conversations')
-    .select('id, channel, contact_id')
+    .select('id, channel, contact_id, last_inbound_at')
     .eq('id', conversationId)
     .single();
   if (convError || !conversation) throw new Error(convError?.message ?? 'Conversación no encontrada');
+
+  let externalMessageId: string | null = null;
+  let sendError: string | null = null;
+
+  if (conversation.channel !== 'internal') {
+    const { data: channelRow } = await db
+      .from('contact_channels')
+      .select('external_id')
+      .eq('contact_id', conversation.contact_id)
+      .eq('channel', conversation.channel)
+      .maybeSingle();
+
+    if (!channelRow) {
+      sendError = 'No se encontró el identificador de este contacto para el canal — no se pudo enviar.';
+    } else if (!isWithinMessagingWindow(conversation.last_inbound_at)) {
+      sendError =
+        'Fuera de la ventana de 24 horas desde el último mensaje del lead: usa una plantilla aprobada para reabrir la conversación (Fase 5).';
+    } else {
+      try {
+        externalMessageId = await sendMessage(conversation.channel, channelRow.external_id, {
+          type: 'text',
+          text: text_body,
+        });
+      } catch (e) {
+        sendError = e instanceof Error ? e.message : String(e);
+      }
+    }
+  }
 
   const { error } = await db.from('messages').insert({
     conversation_id: conversationId,
     direction: 'outbound',
     channel: conversation.channel,
+    external_message_id: externalMessageId,
     sender_type: 'agent_human',
     content_type: 'text',
     text_body,
-    status: conversation.channel === 'internal' ? 'sent' : 'pending_send',
+    status: sendError ? 'failed' : 'sent',
+    raw_payload: sendError ? { error: sendError } : null,
   });
   if (error) throw new Error(error.message);
 
@@ -39,10 +71,11 @@ export async function sendManualMessage(conversationId: string, formData: FormDa
     .eq('id', conversationId);
 
   await logEvent({
-    event_type: 'manual_reply_sent',
+    event_type: sendError ? 'manual_reply_failed' : 'manual_reply_sent',
     actor: 'owner',
     contact_id: conversation.contact_id,
     conversation_id: conversationId,
+    payload: sendError ? { error: sendError } : undefined,
   });
 
   revalidatePath(`/inbox`);

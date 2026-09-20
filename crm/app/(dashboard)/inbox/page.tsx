@@ -120,16 +120,29 @@ export default async function InboxPage({
                   >
                     <Card
                       className={`max-w-md px-3 py-2 ${
-                        m.direction === 'outbound' ? 'bg-brand-600 text-white' : 'bg-white'
+                        m.status === 'failed'
+                          ? 'border-red-300 bg-red-50'
+                          : m.direction === 'outbound'
+                            ? 'bg-brand-600 text-white'
+                            : 'bg-white'
                       }`}
                     >
                       <p className="text-sm">{m.text_body || `[${m.content_type}]`}</p>
                       {m.transcript && (
                         <p className="mt-1 text-xs italic opacity-80">Transcripción: {m.transcript}</p>
                       )}
+                      {m.status === 'failed' && (
+                        <p className="mt-1 text-xs font-medium text-red-700">
+                          ✕ No se pudo enviar{m.raw_payload?.error ? `: ${m.raw_payload.error}` : ''}
+                        </p>
+                      )}
                       <p
                         className={`mt-1 text-[10px] ${
-                          m.direction === 'outbound' ? 'text-brand-100' : 'text-gray-400'
+                          m.status === 'failed'
+                            ? 'text-red-500'
+                            : m.direction === 'outbound'
+                              ? 'text-brand-100'
+                              : 'text-gray-400'
                         }`}
                       >
                         {m.sender_type} · {new Date(m.created_at).toLocaleString('es-CO')}

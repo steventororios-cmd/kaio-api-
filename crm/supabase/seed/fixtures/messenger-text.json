@@ -1,0 +1,20 @@
+{
+  "object": "page",
+  "entry": [
+    {
+      "id": "PAGE_ID_TEST",
+      "time": 1758300300000,
+      "messaging": [
+        {
+          "sender": { "id": "PSID_TEST_001" },
+          "recipient": { "id": "PAGE_ID_TEST" },
+          "timestamp": 1758300300000,
+          "message": {
+            "mid": "mid.TEST_MESSENGER_001",
+            "text": "Hola, ¿tienen el tour del café este sábado?"
+          }
+        }
+      ]
+    }
+  ]
+}
